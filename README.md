@@ -1,47 +1,46 @@
-# Pico
+vi
+("Shave Video"/VirtualDub, just for photos instead of video). Written in
+Swift/SwiftUI + ImageIO/CoreGraphics, with no external dependencies at all.
 
-Minimalistyczna, natywna przeglądarka obrazów na macOS, w stylu Movi
-(„Shave Video”/VirtualDub, tylko dla zdjęć zamiast wideo). Napisana w
-Swift/SwiftUI + ImageIO/CoreGraphics, bez żadnych zewnętrznych zależności.
+The project (folders, the `project.yml` file, the Xcode target, entitlements,
+the `PicoApp` entry point) is named **Pico** throughout — the bundle
+identifier is `com.pico.Pico`. Version **1.0**. The "About Pico" panel
+(Pico menu → About Pico) is entirely custom (`AboutPanel.show()` in
+`PicoApp.swift`, replacing the default `CommandGroup(replacing: .appInfo)`)
+— it shows the version number, "Made by Marzepam" and a clickable
+"Project available on https://github.com/Marzepam" link, through the same
+standard panel AppKit itself uses
+(`NSApplication.orderFrontStandardAboutPanel(options:)`).
 
-Projekt (foldery, plik `project.yml`, target Xcode, entitlements, punkt
-wejścia `PicoApp`) jest w całości nazwany **Pico** — identyfikator pakietu
-to `com.pico.Pico`. Wersja **1.0**. Okno „O Pico” (menu Pico → O Pico) jest
-w całości własne (`AboutPanel.show()` w `PicoApp.swift`, zastępuje domyślny
-`CommandGroup(replacing: .appInfo)`) — pokazuje numer wersji, „Made by
-Marzepam” i klikalny link „Project available on
-https://github.com/Marzepam”, przez ten sam standardowy panel, którego
-używa samo AppKit (`NSApplication.orderFrontStandardAboutPanel(options:)`).
+## Features
 
-## Funkcje
-
-| Funkcja | Jak działa |
+| Feature | How it works |
 |---|---|
-| **Otwórz** | `NSOpenPanel` filtrowany do `UTType.image` — każdy format, jaki system/ImageIO potrafi zdekodować (HEIC, JPEG, PNG, GIF, TIFF, BMP, WebP, ICO i inne), bez ręcznie wypisywanej listy rozszerzeń. |
-| **Przeglądaj** | Wybiera folder (`NSOpenPanel` w trybie wyboru katalogu) i pokazuje siatkę miniatur jego zawartości wewnątrz tego samego okna — przycisk działa jak przełącznik między siatką a podglądem pojedynczego zdjęcia. |
-| **Zapisz jako…** | Konwertuje bieżący obraz do wybranego formatu (JPEG/PNG/TIFF/HEIC/BMP/GIF) przez `NSSavePanel` z własnym widokiem dodatkowym: suwak jakości dla JPEG/HEIC, wybór kompresji (LZW/brak) dla TIFF — nic dodatkowego dla PNG/BMP/GIF, bo tam nie ma czego ustawiać. |
-| **Poprzedni / Następny** | Nawigacja w obrębie folderu, w kolejności własnego sortowania aplikacji (nazwa / data modyfikacji / data utworzenia / rozmiar / typ, rosnąco lub malejąco) — patrz sekcja „Sortowanie” niżej. W trybie okna dopasowują przy tym szerokość okna do proporcji nowego obrazu (wysokość zostaje bez zmian) — patrz „Okno vs. Movi” niżej. |
-| **Powiększ / Pomniejsz / Dopasuj do okna** | Zmieniają tylko to, co widać w oknie — samo okno nigdy nie zmienia rozmiaru przy zoomowaniu (patrz „Okno vs. Movi”). |
-| **Pełny ekran** | Przełącza okno w/z trybu pełnoekranowego (`NSWindow.toggleFullScreen(_:)`); ikona na pasku i jej podpis zmieniają się zgodnie z aktualnym stanem okna, śledzonym przez powiadomienia `willEnterFullScreenNotification`/`didExitFullScreenNotification` — także wtedy, gdy pełny ekran zostanie włączony/wyłączony inną drogą (zielony przycisk okna, ⌃⌘F). |
+| **Open** | An `NSOpenPanel` filtered to `UTType.image` — every format the system/ImageIO can decode (HEIC, JPEG, PNG, GIF, TIFF, BMP, WebP, ICO and more), with no manually maintained extension list. |
+| **Browse** | Picks a folder (`NSOpenPanel` in directory-selection mode) and shows a thumbnail grid of its contents inside the same window — the button acts as a toggle between the grid and the single-image view. |
+| **Save As…** | Converts the current image to a chosen format (JPEG/PNG/TIFF/HEIC/BMP/GIF) through an `NSSavePanel` with a custom accessory view: a quality slider for JPEG/HEIC, a compression choice (LZW/none) for TIFF — nothing extra for PNG/BMP/GIF, since there's nothing to configure there. |
+| **Previous / Next** | Navigates within the folder, in the app's own sort order (name / modification date / creation date / size / type, ascending or descending) — see "Sorting" below. In windowed mode this also adapts the window's width to the new image's aspect ratio (the height stays unchanged) — see "Window vs. Movi" below. |
+| **Zoom In / Zoom Out / Fit to window** | Only change what's visible inside the window — the window itself never changes size when zooming (see "Window vs. Movi"). |
+| **Full screen** | Toggles the window in/out of full-screen mode (`NSWindow.toggleFullScreen(_:)`); the toolbar icon and its tooltip change to match the window's actual state, tracked via the `willEnterFullScreenNotification`/`didExitFullScreenNotification` notifications — including when full screen is entered/exited some other way (the window's green button, ⌃⌘F). |
 
-Dodatkowo (drobne, naturalne rozszerzenia, nieopisane wprost w specyfikacji,
-ale spójne z resztą aplikacji): podwójne kliknięcie przełącza między
-„Dopasuj do okna” a rzeczywistym rozmiarem (100%), gest „uszczypnięcia”
-(pinch-to-zoom) i przeciąganie obrazu myszą, gdy jest powiększony ponad
-rozmiar okna, przeciąganie pliku **lub folderu** na okno (drop pliku =
-„Otwórz”, drop folderu = „Przeglądaj”), obsługa „Otwórz z…” w Finderze oraz
-skróty klawiszowe: ⌘O, ⇧⌘B, ⌘S, strzałki ←/→ (bez modyfikatora),
-⌘+/⌘−/⌘0 oraz goła +/-/0, Esc (wychodzi z siatki miniatur). ⌘N otwiera
-zawsze **nowe, niezależne okno** — natywne zakładki okien (window tabbing)
-są celowo wyłączone, patrz niżej.
+Additionally (small, natural extensions, not explicitly spelled out in the
+spec but consistent with the rest of the app): double-click toggles
+between "Fit to window" and actual size (100%), pinch-to-zoom and
+dragging the image with the mouse when it's zoomed in beyond the window's
+size, dropping a file **or a folder** onto the window (dropping a file =
+"Open", dropping a folder = "Browse"), Finder's "Open With…" support, and
+keyboard shortcuts: ⌘O, ⇧⌘B, ⌘S, the ←/→ arrows (no modifier), ⌘+/⌘−/⌘0 as
+well as bare +/-/0, and Esc (exits the thumbnail grid). ⌘N always opens a
+**new, independent window** — native window tabbing is deliberately
+disabled, see below.
 
-## Wymagania
+## Requirements
 
-- macOS 14.0 lub nowszy
+- macOS 14.0 or newer
 - Xcode 15+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 
-## Budowanie
+## Building
 
 ```bash
 cd Pico
@@ -49,407 +48,197 @@ xcodegen generate
 open Pico.xcodeproj
 ```
 
-Bez XcodeGen: utwórz nowy projekt macOS App w Xcode (SwiftUI, bez Core
-Data), skopiuj zawartość `Sources/` do projektu, podmień wygenerowany
-`Info.plist` na ten z repo, dodaj `Pico.entitlements` jako Code Signing
-Entitlements, ustaw `CFBundleIdentifier` na `com.pico.Pico` i upewnij się,
-że `Localizable.xcstrings` oraz pliki `*.lproj/InfoPlist.strings` są
-dołączone do targetu.
+Without XcodeGen: create a new macOS App project in Xcode (SwiftUI, no
+Core Data), copy the contents of `Sources/` into the project, replace the
+generated `Info.plist` with the one from this repo, add
+`Pico.entitlements` as the Code Signing Entitlements file, set
+`CFBundleIdentifier` to `com.pico.Pico`, and make sure
+`Localizable.xcstrings` and the `*.lproj/InfoPlist.strings` files are
+included in the target.
 
-## Struktura projektu
+## Project structure
 
 ```
 Pico/
-├── project.yml                          ← definicja projektu dla XcodeGen
+├── project.yml                          ← XcodeGen project definition
 ├── Info.plist                           ← CFBundleDocumentTypes, CFBundleLocalizations
-├── Pico.entitlements                    ← celowo pusty (bez App Sandbox — patrz niżej)
+├── Pico.entitlements                    ← deliberately empty (no App Sandbox — see below)
 └── Sources/
     ├── App/
-    │   └── PicoApp.swift                 ← @main, WindowGroup, menu, panel „O Pico”
+    │   └── PicoApp.swift                 ← @main, WindowGroup, menu, "About Pico" panel
     ├── Models/
-    │   ├── BrowsableImage.swift          ← metadane jednego pliku w przeglądanym folderze
-    │   └── ImageSortOption.swift         ← pole sortowania + kierunek, komparator
+    │   ├── BrowsableImage.swift          ← metadata for one file in the browsed folder
+    │   └── ImageSortOption.swift         ← sort field + direction, comparator
     ├── ViewModels/
-    │   └── ImageViewerViewModel.swift    ← cały stan i akcje (otwórz/przeglądaj/zapisz/zoom/nawigacja)
+    │   └── ImageViewerViewModel.swift    ← all state and actions (open/browse/save/zoom/navigation)
     ├── Views/
-    │   ├── ContentView.swift             ← okno, auto-hide paska, rozmiar okna, drag&drop, skróty
-    │   ├── ImageCanvasView.swift         ← widok pojedynczego zdjęcia (zoom/pan/gesty)
-    │   ├── BrowseGridView.swift          ← siatka miniatur + menu sortowania
-    │   ├── FloatingControlBar.swift      ← pływający pasek narzędzi na dole okna
-    │   └── SaveOptionsAccessoryView.swift ← widok dodatkowy NSSavePanel („Zapisz jako…”)
+    │   ├── ContentView.swift             ← window, bar auto-hide, window sizing, drag & drop, shortcuts
+    │   ├── ImageCanvasView.swift         ← single-image view (zoom/pan/gestures)
+    │   ├── BrowseGridView.swift          ← thumbnail grid + sort menu
+    │   ├── FloatingControlBar.swift      ← floating toolbar docked at the bottom of the window
+    │   └── SaveOptionsAccessoryView.swift ← NSSavePanel accessory view ("Save As…")
     ├── Support/
-    │   ├── ImageExporter.swift           ← odczyt (z korektą orientacji EXIF) i zapis przez ImageIO
-    │   ├── SupportedImageTypes.swift     ← jakie formaty są czytelne/zapisywalne, listowanie folderu
+    │   ├── ImageExporter.swift           ← reading (with EXIF orientation correction) and writing via ImageIO
+    │   ├── SupportedImageTypes.swift     ← which formats are readable/writable, folder listing
     │   └── Array+Safe.swift
     ├── Resources/
-    │   └── Localizable.xcstrings         ← String Catalog z tłumaczeniami (pl → en/fr/de/es)
+    │   └── Localizable.xcstrings         ← String Catalog with translations (pl → en/fr/de/es)
     └── {pl,en,fr,de,es}.lproj/
-        └── InfoPlist.strings             ← lokalizacja CFBundleTypeName
+        └── InfoPlist.strings             ← localization of CFBundleTypeName
 ```
 
-## Jak to działa
+## How it works
 
-### Architektura stanu
+### State architecture
 
-Jeden `ImageViewerViewModel` na okno (`@StateObject` w `ContentView`,
-dokładnie jak `EditorViewModel` w Movi) — `WindowGroup` tworzy osobną
-instancję `ContentView` dla każdego okna, więc każde trzyma własny obraz,
-własny kontekst folderu i własny poziom powiększenia. Komendy menu
-(`ImageCommands` w `PicoApp.swift`) sięgają po aktualnie aktywne okno przez
+One `ImageViewerViewModel` per window (a `@StateObject` in `ContentView`,
+exactly like `EditorViewModel` in Movi) — `WindowGroup` creates a separate
+`ContentView` instance for every window, so each one holds its own image,
+its own folder context, and its own zoom level. Menu commands
+(`ImageCommands` in `PicoApp.swift`) reach the currently active window via
 `@FocusedValue(\.imageViewerViewModel)`.
 
-### Jasny/ciemny motyw — zgodnie z systemem, nie zablokowany na sztywno
+### Light/dark theme — follows the system, not hard-locked
 
-Wcześniejsza wersja ustawiała `.preferredColorScheme(.dark)` na całym oknie
-w `PicoApp.swift`, co wymuszało ciemny motyw bez względu na to, w jakim
-trybie jest macOS — łącznie z trybem „Automatycznie”, który sam przełącza
-się jasny/ciemny w zależności o pory dnia. To ustawienie zostało usunięte:
-Pico teraz po prostu podąża za aktualnym wyglądem systemu, tak jak każda
-zwyczajna aplikacja AppKit/SwiftUI.
+An earlier version set `.preferredColorScheme(.dark)` on the whole window
+in `PicoApp.swift`, which forced dark mode regardless of what mode macOS
+was actually in — including "Auto", which switches light/dark on its own
+based on time of day. That setting has been removed: Pico now simply
+follows the system's current appearance, like any ordinary AppKit/SwiftUI
+app.
 
-Samo usunięcie `.preferredColorScheme` nie wystarczało, dopóki tło okna,
-siatka „Przeglądaj” i część tekstów używały twardo wpisanych kolorów
-(`Color.black`, `.foregroundStyle(.white...)`) zamiast systemowych,
-adaptacyjnych odpowiedników — stąd np. siatka miniatur zostawała czarna
-nawet w jasnym trybie. Poprawione miejsca: tło okna w `ContentView`
-(`Color(nsColor: .windowBackgroundColor)` zamiast `Color.black`), tło i
-teksty `BrowseGridView` (to samo `.windowBackgroundColor`, plus
-`.foregroundStyle(.primary)`/`.secondary` zamiast wpisanej na sztywno
-bieli), oraz obramowania/wypełnienia miniatur (`Color.primary.opacity(…)`
-zamiast `Color.white.opacity(…)` — jasny odcień szarości w jasnym trybie,
-jasny odcień bieli w ciemnym).
+Removing `.preferredColorScheme` alone wasn't enough as long as the
+window background, the "Browse" grid, and some of the text used
+hard-coded colors (`Color.black`, `.foregroundStyle(.white...)`) instead
+of the system-adaptive equivalents — which is why, for example, the
+thumbnail grid stayed black even in light mode. Fixed spots: the window
+background in `ContentView` (`Color(nsColor: .windowBackgroundColor)`
+instead of `Color.black`), `BrowseGridView`'s background and text (the
+same `.windowBackgroundColor`, plus `.foregroundStyle(.primary)`/
+`.secondary` instead of hard-coded white), and the thumbnails' borders/
+fills (`Color.primary.opacity(…)` instead of `Color.white.opacity(…)` — a
+light shade of gray in light mode, a light shade of white in dark mode).
 
-Celowym wyjątkiem jest pływający pasek narzędzi (`FloatingControlBar`) —
-zostaje na stałe ciemną, półprzezroczystą belką niezależnie od motywu
-systemu, tak samo jak sterowanie odtwarzaczem w QuickTime Playerze czy w
-Movi: pasek pływa nad dowolnym zdjęciem o nieprzewidywalnej jasności, więc
-stały, ciemny kontrast jest tu bardziej czytelny niż belka, która sama
-zmieniałaby jasność.
+A deliberate exception is the floating toolbar (`FloatingControlBar`) —
+it stays a permanently dark, semi-transparent bar regardless of the
+system theme, the same way QuickTime Player's or Movi's playback controls
+do: the bar floats over an arbitrary image of unpredictable brightness, so
+a fixed, dark contrast reads better here than a bar that itself kept
+changing brightness.
 
-Ten celowy wyjątek miał jednak swoją własną usterkę: ikony przycisków w
-`controlButton` i dwa boczne etykiety (procent zoomu, pozycja w folderze)
-nie miały własnego, wpisanego na sztywno koloru — korzystały z domyślnego/
-`.secondary`, czyli systemowego, adaptacyjnego. W ciemnym motywie to
-wychodziło jako biały na czarnym (przypadkiem czytelne), ale w jasnym
-motywie `.secondary`/domyślny kolor robił się ciemny, więc ikony stawały
-się praktycznie czarne na czarnym, niewidoczne tle paska. Skoro sam pasek
-ma zawsze być ciemny, jego zawartość też musi mieć wpisany na sztywno
-biały, a nie systemowy kolor — stąd `Image(systemName:)` w `controlButton`
-ma teraz `.foregroundStyle(.white)`, a etykiety zoomu/pozycji
-`.foregroundStyle(.white.opacity(0.6))` (nazwa pliku pośrodku paska już
-wcześniej miała `.white.opacity(0.85)` i została bez zmian).
+That deliberate exception had a bug of its own, though: the button icons
+in `controlButton` and the two side labels (zoom percentage, position in
+the folder) had no color of their own hard-coded in — they relied on the
+default/`.secondary`, i.e. the system-adaptive one. In dark mode that came
+out as white-on-black (readable by accident), but in light mode
+`.secondary`/the default color turned dark, so the icons ended up
+practically black on the bar's black background, invisible. Since the
+bar itself is always meant to stay dark, its contents need a hard-coded
+white too, not a system color — hence `Image(systemName:)` in
+`controlButton` now has `.foregroundStyle(.white)`, and the zoom/position
+labels have `.foregroundStyle(.white.opacity(0.6))` (the filename in the
+middle of the bar already had `.white.opacity(0.85)` and was left
+unchanged).
 
-**Korekta: tylko siatka „Przeglądaj” podąża za systemem — a tło zdjęcia
-zmienia się na czarne dopiero po pierwszym wyświetleniu obrazka, nie od
-razu przy otwarciu okna.** Powyższe „wszystko adaptacyjne” okazało się za
-szerokie: płótno z pojedynczym zdjęciem (tak w trybie okna jak i
-pełnoekranowym) ma być zawsze czarne niezależnie od motywu systemu — tak
-samo jak w Preview, Photos czy QuickTime, zdjęcie nigdy nie ma stawać na
-tle, które samo zmienia kolor. Adaptacyjny pozostał `BrowseGridView`
-(siatka miniatur) — ale też stan „brak pliku” (`emptyState`), pokazywany
-od razu po otwarciu okna, zanim jakikolwiek obrazek został wyświetlony:
-to wciąż ma wyglądać jak zwykłe okno systemowe, nie czarny ekran.
+**Correction: only the "Browse" grid follows the system — and the image
+canvas's background only turns black once the first image is actually
+displayed, not immediately when the window opens.** The "make everything
+adaptive" approach above turned out to be too broad: the canvas showing a
+single image (in both windowed and full-screen mode) is meant to always
+be black regardless of system theme — the same convention as Preview,
+Photos, or QuickTime, where a photo should never sit on a backdrop that
+changes color on its own. What stayed adaptive is `BrowseGridView` (the
+thumbnail grid) — but also the "no file" state (`emptyState`), shown
+right when the window first opens, before any image has been displayed:
+that's still meant to look like an ordinary system window, not a black
+screen.
 
-W `ContentView` tę trzecią możliwość obsługuje `backgroundColor`
-(zastępując wcześniejszy prosty warunek `isBrowsing ? clear : black`):
-`isBrowsing` → `Color.clear` (przepuszcza własne tło `BrowseGridView`);
-inaczej, dopóki `hasShownImage` jest `false` → `Color(nsColor:
-.windowBackgroundColor)` (adaptacyjne, jak zwykłe okno); od momentu, gdy
-`hasShownImage` zostanie ustawione na `true`, → `Color.black`, i to się
-już nie odwraca — nawet jeśli płótno później na chwilę wróci do `nil`
-(błąd dekodowania), tło zostaje czarne, zamiast migać z powrotem do
-adaptacyjnego. `hasShownImage` to `@State` ustawiane raz, w tym samym
-`onReceive(viewModel.$currentImage...)`, które już wywołuje
-`fitWindowFullHeight`. Teksty/ikona `emptyState` wróciły z powrotem do
-adaptacyjnych `.tertiary`/`.secondary`, bo stoją teraz na adaptacyjnym tle,
-nie na czarnym.
+In `ContentView` this third case is handled by `backgroundColor`
+(replacing the earlier, simpler `isBrowsing ? clear : black` condition):
+`isBrowsing` → `Color.clear` (lets `BrowseGridView`'s own background show
+through); otherwise, as long as `hasShownImage` is `false` →
+`Color(nsColor: .windowBackgroundColor)` (adaptive, like an ordinary
+window); from the moment `hasShownImage` is set to `true` →
+`Color.black`, and that never flips back — even if the canvas later
+briefly returns to `nil` (a decode error), the background stays black
+instead of flickering back to the adaptive one. `hasShownImage` is a
+`@State` set once, in the same `onReceive(viewModel.$currentImage...)`
+that already calls `fitWindowFullHeight`. The `emptyState` text/icon went
+back to adaptive `.tertiary`/`.secondary`, since they now sit on an
+adaptive background, not a black one.
 
-### Rozmiar okna w trybie Przeglądaj — pamiętany między uruchomieniami
+### Browse window size — remembered across launches
 
-Tylko siatka „Przeglądaj” ma własną pamięć rozmiaru okna — zwykłe
-przeglądanie zdjęć działa dokładnie tak jak opisano wyżej
-(`fitWindowFullHeight`, pełna wysokość ekranu przy każdym zdjęciu) i nie
-jest tym w żaden sposób dotknięte. W `ContentView`:
+Only the "Browse" grid has its own window-size memory — ordinary image
+viewing works exactly as described below (`fitWindowFullHeight`, full
+screen height for every image) and is in no way affected by this. In
+`ContentView`:
 
-- `saveBrowseWindowSize(_:)` zapisuje bieżący rozmiar okna do
-  `UserDefaults` (`pico.browseWindowWidth`/`pico.browseWindowHeight`) przy
-  każdym `NSWindow.didResizeNotification`, o ile w tym momencie
-  `viewModel.isBrowsing` jest `true` i okno nie jest w pełnym ekranie (tam
-  rozmiar ramki to po prostu rozmiar ekranu, nie ma sensu go pamiętać).
-  Zapis dzieje się na żywo, przy każdym przeciągnięciu, więc to, co jest
-  zapisane w chwili zamknięcia aplikacji, jest zawsze aktualne — nie trzeba
-  osobnego haka na zamknięcie okna/aplikacji.
-- `applyBrowseWindowSize(window:)` odczytuje te dwie wartości i — jeśli są
-  zapisane (pierwsze uruchomienie: nie są, więc okno zostaje bez zmian) —
-  przestawia okno na ten rozmiar, przycięty do `window.minSize` i do
-  widocznego obszaru ekranu, zachowując bieżący środek okna. Wywoływane
-  raz, w `onChange(of: viewModel.isBrowsing)` w `body`, tylko gdy tryb
-  Przeglądaj właśnie się włącza — wyjście z niego (bez wczytania nowego
-  zdjęcia) zostaje bez zmian, tak jak wcześniej.
+- `saveBrowseWindowSize(_:)` saves the window's current size to
+  `UserDefaults` (`pico.browseWindowWidth`/`pico.browseWindowHeight`) on
+  every `NSWindow.didResizeNotification`, as long as `viewModel.isBrowsing`
+  is `true` at that moment and the window isn't in full screen (there the
+  frame size is just the screen's own size, not worth remembering). The
+  save happens live, on every drag, so whatever is saved at the moment
+  the app happens to close is always current — there's no separate
+  "save on quit" hook to get right.
+- `applyBrowseWindowSize(window:)` reads those two values and — if they've
+  been saved (on the very first launch they haven't, so the window is
+  left unchanged) — resizes the window to that size, clamped to
+  `window.minSize` and to the screen's visible area, keeping the window's
+  current center. Called once, in `onChange(of: viewModel.isBrowsing)` in
+  `body`, only when Browse mode is turning on — leaving it (without
+  loading a new image) is left unchanged, same as before.
 
-Efekt: powiększenie okna w trybie Przeglądaj zostaje zapamiętane, kolejne
-wejście do Przeglądaj (w tej samej sesji albo po ponownym uruchomieniu
-aplikacji) przywraca właśnie ten rozmiar.
+Effect: enlarging the window while Browsing is remembered, and the next
+time Browse mode is entered — in the same session, or after relaunching
+the app — restores that exact size.
 
-### Zakładki (window tabbing) — wyłączone
+### Window tabbing — disabled
 
-Natywne zakładki okien macOS są celowo wyłączone, na wyraźne życzenie:
-`PicoApp.init()` ustawia `NSWindow.allowsAutomaticWindowTabbing = false`
-jeszcze przed utworzeniem pierwszego okna (usuwa przycisk „+” i pozycje
-„Pokaż pasek kart”/„Scal wszystkie okna” z menu Okno w całej aplikacji), a
-`ContentView` dodatkowo ustawia `window.tabbingMode = .disallowed` na
-każdym oknie z osobna, gdy tylko zostanie rozpoznane (`WindowAccessor`) —
-podwójne zabezpieczenie, nie tylko globalny przełącznik. ⌘N nadal otwiera
-nowe okno (to zwykłe zachowanie `WindowGroup`, niezależne od tabbingu) —
-po prostu nigdy nie dołącza się ono do paska kart innego okna.
+macOS's native window tabbing is deliberately disabled, per explicit
+request: `PicoApp.init()` sets `NSWindow.allowsAutomaticWindowTabbing =
+false` before the first window is even created (removing the "+" button
+and the "Show Tab Bar"/"Merge All Windows" items from the Window menu,
+app-wide), and `ContentView` additionally sets
+`window.tabbingMode = .disallowed` on every window individually, as soon
+as it's resolved (`WindowAccessor`) — belt and suspenders, not just the
+global switch. ⌘N still opens a new window (that's `WindowGroup`'s
+ordinary behavior, independent of tabbing) — it simply never joins
+another window's tab bar.
 
-### Korekta orientacji EXIF
+### EXIF orientation correction
 
-`CGImageSourceCreateImageAtIndex` **nie** stosuje automatycznie tagu
-orientacji z EXIF/TIFF — zdjęcie zrobione telefonem trzymanym pionowo
-wyszłoby bokiem, zarówno na ekranie, jak i w eksportowanej kopii.
-`ImageExporter.loadUprightImage(url:)` czyta ten tag osobno
-(`kCGImagePropertyOrientation`) i — jeśli różni się od „normalnej”
-orientacji — rysuje obraz na nowo przez odpowiednią `CGAffineTransform` w
-świeżym `CGContext`, tak że wynikowy `CGImage` jest już zawsze „prosto”.
-Dzięki temu „Zapisz jako…” zawsze zapisuje piksele w poprawnej orientacji,
-nawet przy konwersji między formatami o różnych konwencjach zapisu tagu
-(np. HEIC z boczną orientacją → JPEG) — bo orientacja jest już przeliczona
-na poziomie pikseli, a nie przenoszona jako tag do reinterpretacji.
+`CGImageSourceCreateImageAtIndex` does **not** automatically apply the
+EXIF/TIFF orientation tag — a photo taken with the phone held upright
+would come out sideways, both on screen and in the exported copy.
+`ImageExporter.loadUprightImage(url:)` reads that tag separately
+(`kCGImagePropertyOrientation`) and, if it differs from the "normal"
+orientation, redraws the image through the appropriate
+`CGAffineTransform` in a fresh `CGContext`, so the resulting `CGImage` is
+always already "upright". Thanks to this, "Save As…" always writes pixels
+in the correct orientation, even when converting between formats with
+different tag-writing conventions (e.g. a sideways-oriented HEIC →
+JPEG) — because the orientation has already been baked into the pixels
+themselves rather than carried over as a tag to be reinterpreted.
 
-Jeśli `CGContext` odmówi utworzenia się dla jakiegoś nietypowego formatu
-piksela (zdarza się przy plikach CMYK/indeksowanych), kod po cichu wraca do
-nieobróconego obrazu zamiast się wywalić — do przetestowania z prawdziwymi
-plikami w Xcode; to jedyne miejsce w aplikacji, gdzie dopuszczam ciche
-pogorszenie zamiast twardego błędu, bo alternatywą byłby crash na pliku,
-który i tak dałoby się obejrzeć (tylko ewentualnie źle obrócony).
+If `CGContext` fails to be created for some unusual pixel format (this
+happens with some CMYK/indexed files), the code silently falls back to
+the un-rotated image instead of crashing — still to be tested against
+real files in Xcode; this is the one place in the app where I allow a
+silent degradation instead of a hard error, since the alternative would
+be a crash on a file that could still be viewed anyway (just possibly
+rotated wrong).
 
-### Okno vs. Movi — zoom nigdy nie zmienia rozmiaru okna; każdy obraz używa pełnej wysokości ekranu
+### Window vs. Movi — zoom never resizes the window; every image uses the full screen height
 
-To największa różnica względem Movi. Movi blokuje proporcje okna do
-proporcji wideo (`NSWindow.contentAspectRatio` + własny
-`NSWindowDelegate.windowWillResize`), żeby wideo zawsze wypełniało okno
-bez czarnych pasków — to miało sens, bo tam zoom = rozmiar okna.
+This is the biggest difference from Movi. Movi locks the window's aspect
+ratio to the video's (`NSWindow.contentAspectRatio` +  a custom
+`NSWindowDelegate.windowWillResize`), so the video always fills the
+window with no black bars — that made sense there, because zoom = window
+size.
 
-W Pico **Powiększ/Pomniejsz/Dopasuj do okna nigdy nie zmieniają rozmiaru
-okna** — to zastrzeżenie zostaje w mocy bez zmian: okno nie ma blokady
-proporcji ani własnego `NSWindowDelegate`, a to `ImageCanvasView`
-dopasowuje/powiększa obraz *wewnątrz* dowolnego aktualnego rozmiaru okna.
-
-Osobna sprawa to **zmiana samego obrazu** (Otwórz/Poprzedni/Następny/
-kliknięcie miniatury) i **ręczna zmiana rozmiaru okna** przez przeciąganie
-jego krawędzi — dwa osobne mechanizmy:
-
-1. **Każdy obraz w trybie okna** — pierwszy w danym oknie, po zmianie
-   folderu i każdy kolejny Następny/Poprzedni — korzysta z jednej i tej
-   samej reguły, `ContentView.fitWindowFullHeight`: okno zajmuje **całą
-   dostępną wysokość ekranu** między paskiem menu a Dockiem
-   (`screen.visibleFrame.height`) i jest wyśrodkowane; przelicza się
-   tylko **szerokość**, do proporcji aktualnego obrazu przy tej
-   wysokości — więc bocznych pasów nie ma, o ile obraz nie jest węższy,
-   niż pozwala minimalna szerokość paska narzędzi (patrz punkt 3. niżej).
-   Zmiana jest **natychmiastowa, bez animacji** (`animate: false`) —
-   okno powinno mieć docelowy rozmiar w tej samej chwili, w której
-   pojawia się nowy obraz, a nie dogania go z opóźnieniem.
-2. **Ręczna zmiana rozmiaru okna** (przeciąganie krawędzi/narożnika) nie
-   jest przez Pico w żaden sposób korygowana — obraz jest wtedy w
-   dynamicznym trybie „Dopasuj” (`isZoomFit == true`, patrz niżej), więc
-   `ImageCanvasView`'s `GeometryReader` sam, na żywo, przelicza skalę z
-   nowego rozmiaru okna; paski są tu normalnym, oczekiwanym skutkiem
-   przeciągnięcia okna do proporcji, których obraz nie ma — tak jak w
-   Preview.app. Taka ręczna zmiana zostaje w mocy dokładnie do
-   następnego obrazu — przejście Następny/Poprzedni (punkt 1.) zawsze z
-   powrotem wymusza pełną wysokość ekranu, niezależnie od tego, do
-   czego okno było wcześniej przeciągnięte.
-3. **Minimalny rozmiar okna** (`window.minSize`) ma teraz tę samą wartość
-   na obu osiach — `FloatingControlBar.minWindowWidth` — zamiast, jak
-   wcześniej, dużo niższego minimum na wysokości (tyle, co sama stopka
-   paska narzędzi). Bez tego dało się przeciągnąć okno do bardzo niskiej,
-   szerokiej belki, w której obraz był już tylko małą ikoną — ten sam
-   dolny limit na obu osiach to wyklucza. `fitWindowFullHeight` używa
-   tego samego minimum jako dolnego ograniczenia szerokości (dla bardzo
-   wąskich/pionowych zdjęć przy pełnej wysokości ekranu).
-
-   Ta funkcja **nie** wymusza jawnej skali na modelu widoku (tak jak
-   robiła to jedna z wcześniejszych wersji, `applyExplicitScale`) —
-   zostaje w dynamicznym trybie „Dopasuj” (ustawionym już wcześniej przez
-   `resetZoom()` dla każdego nowo wczytanego obrazu), więc
-   `ImageCanvasView` sam przelicza skalę z faktycznego, aktualnego
-   rozmiaru okna. To jest też **poprawka błędu**: jedna z wcześniejszych
-   wersji ustawiała jawną, zafiksowaną skalę po każdej zmianie obrazu, co
-   skutkowało tym, że obraz „zamarzał” na tej skali i nie reagował na
-   żadną późniejszą ręczną zmianę rozmiaru okna, aż do następnej zmiany
-   zdjęcia. Pozostawienie trybu „Dopasuj” włączonym naprawia to —
-   przeglądanie i ręczne przeciąganie okna zawsze współpracują ze sobą,
-   niezależnie od kolejności.
-
-W pełnym ekranie mechanizm z punktu 1. się nie uruchamia — treść okna to
-wtedy rozmiar ekranu, więc zamiast tego `installFullScreenObservers`
-przełącza na wejściu w pełny ekran z powrotem na dynamiczny tryb
-„Dopasuj” (`viewModel.zoomToFit()`) — przydatne tylko wtedy, gdy obraz był
-akurat w trybie jawnego zoomu (pinch/przyciski) sprzed wejścia w pełny
-ekran; podczas zwykłego przeglądania tryb „Dopasuj” jest już włączony,
-więc to wywołanie wtedy nic nie zmienia. **Wyjście** z pełnego ekranu z
-kolei ponownie uruchamia `fitWindowFullHeight` — ta sama reguła co dla
-każdego innego obrazu.
-
-### Zoom: tryb „Dopasuj” kontra jawny procent
-
-`isZoomFit: Bool` + `zoomScale: CGFloat` w `ImageViewerViewModel`. Gdy
-`isZoomFit == true`, `ImageCanvasView` codziennie przelicza skalę z
-własnego, aktualnego rozmiaru viewportu (przez `GeometryReader`) — więc
-zmiana rozmiaru okna automatycznie przelicza dopasowanie. Gdy ktoś jawnie
-powiększy/pomniejszy (przyciski, ⌘+/⌘−, pinch, podwójny klik), tryb
-przełącza się na jawny procent niezależny od rozmiaru okna — zgodnie z
-poleceniem. Osobny mały widok, `FitScaleTracker`, publikuje aktualnie
-wyliczoną skalę „dopasowania” z powrotem do modelu widoku wyłącznie po to,
-żeby etykieta procentowa w pasku narzędzi (siostrzany widok, nie dziecko
-płótna) mogła ją pokazać poprawnie również w trybie „Dopasuj”.
-
-**Animacja skali — tylko tam, gdzie jest dyskretna, celowa zmiana.**
-Wcześniej `ImageCanvasView` miał ogólny modyfikator
-`.animation(.easeOut(duration: 0.15), value: baseScale)` na obrazie,
-animujący *każdą* zmianę wyświetlanej skali — również ciągłe, już-i-tak
-liczone na żywo przeliczenie trybu „Dopasuj” w trakcie zmiany rozmiaru
-okna. Najbardziej widoczne w trybie pełnoekranowym: systemowa animacja
-wejścia/wyjścia z pełnego ekranu sama już zmienia rozmiar okna płynnie
-klatka po klatce, a doklejona do tego osobna, niezależnie zsynchronizowana
-animacja 0,15 s nakładała się na to i wyglądała na „szarpaną”/dziwną.
-Modyfikator został usunięty z `ImageCanvasView` całkowicie; animacja
-przeniosła się do konkretnych miejsc w `ImageViewerViewModel`, które same
-decydują o zmianie skali — `zoomIn()`, `zoomOut()`, `toggleActualSize()` —
-owinięte w `withAnimation(.easeOut(duration: 0.15))`. Zmiany skali, które
-już są zsynchronizowane z czymś innym, co sam jest płynne/natychmiastowe,
-zostają bez animacji — `zoomToFit()` i tryb „Dopasuj” w ogóle (zarówno
-przy ręcznym przeciąganiu okna, jak i przy zmianie obrazu —
-`fitWindowFullHeight` celowo zostawia ten tryb włączony, patrz wyżej) —
-`ImageCanvasView` przelicza tę skalę sam, co klatka, z aktualnego
-rozmiaru okna, więc dodanie tu animacji ponownie rozjechałoby obraz z
-oknem — oraz `setZoom(_:)` (pinch — już śledzony na żywo w trakcie
-gestu).
-
-Przeciąganie (pan) jest ograniczone (`clampedPan`) tak, by nie dało się
-wyrzucić obrazu całkowicie poza okno — oś bez nadmiaru (np. gdy obraz jest
-mniejszy od okna w danym wymiarze) jest po prostu zablokowana na zero.
-
-### Sortowanie — własne, nie odwzorowanie Findera
-
-Dokładna kolejność „Uporządkuj według” w danym folderze w Finderze nie
-jest dostępna przez żadne publiczne API — jedyny sposób na jej odczytanie
-to parsowanie niedokumentowanego, binarnego formatu `.DS_Store`, co jest
-zawodne i różni się między wersjami macOS (patrz rozmowa przed
-implementacją). Zamiast tego Pico ma własne, w pełni przewidywalne
-sortowanie (`ImageSortOption`: pole + kierunek), ustawiane w menu „Sortuj”
-w widoku siatki — domyślnie po nazwie, rosnąco. Remisy (np. ten sam rozmiar
-pliku) zawsze rozstrzyga nazwa, więc kolejność jest zawsze deterministyczna.
-
-### Poprzedni/Następny po „Otwórz” — skanowanie folderu w tle, bez sandboksa
-
-Pico **nie jest w piaskownicy** — `Pico.entitlements` jest celowo pusty.
-Aplikacja nie trafia do Mac App Store, więc App Sandbox nie jest wymagany, a
-jego brak usuwa źródło wcześniejszego ograniczenia: w pełnym sandboksie
-wybór **pojedynczego pliku** przez `NSOpenPanel` daje dostęp tylko do tego
-jednego pliku, nie do jego sąsiadów w folderze, więc Poprzedni/Następny nie
-miały jak zadziałać po samym „Otwórz”. Bez sandboksa ten problem znika.
-
-Zamiast tego `ImageViewerViewModel.openSingleFile(url:)` najpierw pokazuje
-otwarty obraz od razu, a zaraz potem, w tle (`scanContainingFolder(of:)`,
-`Task.detached` poza aktorem głównym), skanuje jego folder macierzysty przez
-zwykłe `FileManager.contentsOfDirectory` — żadnego dodatkowego okna ani
-pytania o zgodę (poza ewentualnym jednorazowym systemowym pytaniem o dostęp
-do chronionej lokalizacji typu Pulpit/Dokumenty/Pobrane, identycznym jak przy
-każdej innej, niesandboksowanej aplikacji na Macu). Gdy skan się skończy,
-Pico przyjmuje ten folder jako aktywny kontekst przeglądania — stąd
-Poprzedni/Następny włączają się same (razem, patrz niżej — nie szarzeją już
-osobno przy brzegach listy), bez przełączania w widok siatki i bez osobnego
-kroku „Przeglądaj”. Jeśli w międzyczasie zdjęcie
-zmieni się ponownie (szybkie kolejne „Otwórz” albo Next/Previous, zanim duży
-folder skończy się skanować), wynik nieaktualnego skanu jest po prostu
-odrzucany.
-
-Jeśli „Otwórz” wskaże plik, który akurat już należy do aktualnie
-przeglądanego folderu (np. ponowne otwarcie przez Finder „Otwórz z…” pliku
-z tego samego folderu, albo kliknięcie miniatury), Pico rozpoznaje to po
-samej liście `folderImages` i nie skanuje niczego od nowa — Poprzedni/Następny
-zostają aktywne od razu.
-
-### Poprzedni/Następny zapętlają się, zamiast gasnąć na krańcach listy
-
-`canGoPrevious`/`canGoNext` w `ImageViewerViewModel` sprawdzają tylko, czy
-aktywny folder ma więcej niż jedno zdjęcie (`folderImages.count > 1`) — nie
-sprawdzają już, czy bieżący indeks jest akurat pierwszy/ostatni. Obie ikony
-są więc zawsze razem aktywne albo razem wyszarzone, nigdy osobno. Samo
-przejście liczy nowy indeks modulo liczby zdjęć (`(idx + 1) %
-folderImages.count` i analogicznie w tył), więc Następny na ostatnim
-zdjęciu przeskakuje na pierwsze, a Poprzedni na pierwszym — na ostatnie,
-zamiast się zatrzymywać na krańcach.
-
-### Zapisz jako — opcje tylko tam, gdzie mają sens
-
-`SaveOptionsAccessoryView` to własny widok dodatkowy `NSSavePanel`, napisany
-w czystym AppKicie (`NSStackView` + `NSPopUpButton`/`NSSlider` sterowane
-target/action) — **nie** jako widok SwiftUI osadzony przez `NSHostingView`.
-Pierwsza wersja właśnie tak robiła, ale okazało się, że `Picker` SwiftUI
-osadzony w `accessoryView` panelu to zawodne połączenie: nawet z jawnie
-ustawioną ramką i `sizingOptions` na `NSHostingView`, rozwijana lista
-formatu bywała nieklikalna, dopóki coś innego nie wymusiło ponownego układu
-(widać to było jako „lista formatów nagle się pojawia po kliknięciu
-Zapisz”). Zwykły `NSPopUpButton` nie przechodzi przez ten mostek w ogóle i
-jest klikalny od razu. Wybór formatu na żywo aktualizuje
-`panel.allowedContentTypes` i rozszerzenie w nazwie pliku przez zamykanie
-`onChange: (() -> Void)?` wywoływane z akcji każdego kontrolu. Suwak jakości
-pokazuje się tylko dla JPEG/HEIC (`supportsQuality`), wybór kompresji
-LZW/brak — tylko dla TIFF (`supportsCompressionChoice`); PNG/BMP/GIF nie
-pokazują nic dodatkowego, bo tam nie ma czego ustawiać —
-`NSStackView.isHidden` na odpowiedniej grupie wierszy chowa/pokazuje je bez
-zmiany szerokości panelu. Domyślna nazwa pliku to zawsze
-`<oryginał>_pico.<rozszerzenie>` (ten sam wzorzec co `_movi` w Movi; jeśli
-`<oryginał>` sam już kończy się na `_pico` — bo zapisywany plik był już
-wcześniej eksportem z Pico — ten sufiks jest najpierw zdejmowany, żeby nie
-dostać `_pico_pico`) — nigdy nie nadpisuje cicho oryginału.
-
-Formaty zapisu są świadomie węższe niż formaty odczytu: ImageIO potrafi
-**czytać** WebP i ICO, ale nie ma dla nich enkodera, więc te dwa formaty są
-tylko do podglądu — nigdy nie pojawią się jako cel „Zapisz jako…”.
-
-### Ikona aplikacji
-
-Dostarczona przez autora (plik `icon-source/pico-icon-1024.png`) — szklista,
-biała kula z tęczowym, akwarelowym „okiem” pośrodku, osadzona na białej,
-zaokrąglonej karcie z delikatnym cieniem pod spodem, kadrowana krawędź do
-krawędzi (karta wypełnia cały kwadrat, bez marginesu dookoła). Używana
-**w całości, jako pełny kwadrat 1024×1024** (bez wycinania samej kuli ani
-własnej przezroczystości) — macOS nakłada swoją maskę „squircle” sam przy
-wyświetlaniu, zgodnie z wytycznymi Apple, więc biel karty i tak pozostaje
-niewidoczna na większości miejsc, w których ikona się pojawia. Przeskalowana
-(Lanczos) do wszystkich 10 rozmiarów wymaganych przez `AppIcon.appiconset`.
-
-### Pasek narzędzi — jedna wspólna siatka odstępów
-
-Wszystkie ikony `FloatingControlBar` (Otwórz, Przeglądaj, Poprzedni,
-Pomniejsz, Dopasuj do okna, Powiększ, Następny, Pełny ekran, Zapisz jako)
-siedzą w jednym `HStack` z jednym, jednakowym odstępem między każdą parą —
-żadnego mieszania pozycji o sztywnej szerokości z elastycznymi `Spacer`ami,
-co wcześniej dawało nierówne odstępy (duża przerwa przed grupą, wąskie
-przerwy wewnątrz niej). Szerokość samego paska (`barWidth`) jest liczona
-wprost z liczby ikon, ich rozmiaru i odstępu, więc nie może już „rozjechać
-się” z rzeczywistą zawartością. Ikony „Dopasuj do okna” zmieniły symbol na
-`viewfinder`, żeby zwolnić parę `arrow.up.left.and.arrow.down.right` /
-`arrow.down.right.and.arrow.up.left` dla nowego przycisku pełnego ekranu.
-
-## Znane ograniczenia
-
-- Animowane GIF-y pokazują tylko pierwszą klatkę — bez odtwarzania animacji.
-- Podgląd miniatur w siatce nie odświeża się automatycznie, jeśli zawartość
-  folderu zmieni się na dysku, gdy okno jest już otwarte (trzeba kliknąć
-  „Przeglądaj”/„Zmień folder…” ponownie).
-- Formaty zapisu ograniczone są do tych, dla których ImageIO ma enkoder
-  (JPEG/PNG/TIFF/HEIC/BMP/GIF) — WebP i ICO są tylko do odczytu.
-- „Otwórz z…” w Finderze czasem wymaga odświeżenia LaunchServices po pierwszym
-  zbudowaniu aplikacji (np. ponowne uruchomienie Findera albo wylogowanie/
-  zalogowanie) — patrz komentarz przy `CFBundleDocumentTypes` w `Info.plist`.
-
-## Licencja
-
-Kod wolny do użycia i modyfikacji w dowolny sposób — bez dodatkowych
-ograniczeń.
+In Pico, **Zoom In/Zoom Out/Fit to window never change the window's
+size** — that requirement stands unchanged: the window has no aspect-ratio
+lock and no custom `NSWindowDelegate`; instead `ImageCanvasView` fits/
+scales the image *inside* whatever the window's current size happens t
