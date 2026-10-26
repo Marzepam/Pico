@@ -1,5 +1,6 @@
-vi
-("Shave Video"/VirtualDub, just for photos instead of video). Written in
+# Pico
+
+A minimalist, native macOS image viewer. Written in
 Swift/SwiftUI + ImageIO/CoreGraphics, with no external dependencies at all.
 
 The project (folders, the `project.yml` file, the Xcode target, entitlements,
@@ -241,4 +242,223 @@ size.
 In Pico, **Zoom In/Zoom Out/Fit to window never change the window's
 size** — that requirement stands unchanged: the window has no aspect-ratio
 lock and no custom `NSWindowDelegate`; instead `ImageCanvasView` fits/
-scales the image *inside* whatever the window's current size happens t
+scales the image *inside* whatever the window's current size happens to
+be.
+
+A separate matter is **changing the image itself** (Open/Previous/Next/
+clicking a thumbnail) versus **manually resizing the window** by dragging
+its edge — two separate mechanisms:
+
+1. **Every image in windowed mode** — the first one in a given window,
+   after switching folders, and every subsequent Next/Previous — uses one
+   and the same rule, `ContentView.fitWindowFullHeight`: the window takes
+   up the **entire available screen height** between the menu bar and the
+   Dock (`screen.visibleFrame.height`) and is centered; only the
+   **width** is recomputed, to the current image's aspect ratio at that
+   height — so there are no side bars, unless the image is narrower than
+   the toolbar's minimum width allows (see point 3 below). The change is
+   **instant, with no animation** (`animate: false`) — the window should
+   already be at its target size the instant the new image appears, not
+   visibly catching up to it with a delay.
+2. **Manually resizing the window** (dragging an edge/corner) is in no
+   way corrected by Pico — the image is then in dynamic "Fit" mode
+   (`isZoomFit == true`, see below), so `ImageCanvasView`'s
+   `GeometryReader` itself recomputes the scale live from the new window
+   size; bars here are the normal, expected result of dragging the window
+   to a shape the image doesn't have — just like in Preview.app. Such a
+   manual change stays in effect exactly until the next image — a Next/
+   Previous transition (point 1) always re-asserts the full screen height
+   again, regardless of what shape the window was previously dragged into.
+3. **The window's minimum size** (`window.minSize`) now has the same
+   value on both axes — `FloatingControlBar.minWindowWidth` — instead of,
+   as before, a much lower minimum on height (just enough for the
+   toolbar's own footprint). Without this, the window could be dragged
+   into a very short, wide strip in which the image was reduced to a tiny
+   icon — the same floor on both axes rules that out.
+   `fitWindowFullHeight` uses this same minimum as the lower bound on
+   width (for very narrow/portrait images at full screen height).
+
+   This function does **not** force an explicit scale onto the view model
+   (the way one earlier version did, `applyExplicitScale`) — it stays in
+   dynamic "Fit" mode (already set earlier by `resetZoom()` for every
+   newly loaded image), so `ImageCanvasView` itself recomputes the scale
+   from the window's actual, current size. This is also a **bug fix**:
+   one earlier version set an explicit, fixed scale after every image
+   change, which left the image "frozen" at that scale, unresponsive to
+   any later manual window resize, until the next image change. Leaving
+   "Fit" mode on fixes this — browsing and manually dragging the window
+   always cooperate with each other, regardless of order.
+
+In full screen, the mechanism from point 1 doesn't run at all — the
+window's content is then the size of the screen, so instead
+`installFullScreenObservers` switches, on entering full screen, back to
+dynamic "Fit" mode (`viewModel.zoomToFit()`) — only useful if the image
+happened to be in explicit zoom mode (pinch/buttons) right before
+entering full screen; during ordinary browsing, "Fit" mode is already on,
+so this call then changes nothing. **Exiting** full screen, in turn,
+re-runs `fitWindowFullHeight` — the same rule as for any other image.
+
+### Zoom: "Fit" mode versus an explicit percentage
+
+`isZoomFit: Bool` + `zoomScale: CGFloat` in `ImageViewerViewModel`. When
+`isZoomFit == true`, `ImageCanvasView` continuously recomputes the scale
+from its own current viewport size (via `GeometryReader`) — so resizing
+the window automatically recomputes the fit. When someone explicitly
+zooms in/out (buttons, ⌘+/⌘−, pinch, double-click), the mode switches to
+an explicit percentage, independent of the window size — as requested. A
+small separate view, `FitScaleTracker`, publishes the currently computed
+"fit" scale back to the view model purely so the percentage label in the
+toolbar (a sibling view, not a child of the canvas) can show it correctly
+in "Fit" mode too.
+
+**Scale animation — only where it's a discrete, deliberate change.**
+`ImageCanvasView` used to have a blanket
+`.animation(.easeOut(duration: 0.15), value: baseScale)` modifier on the
+image, animating *every* change to the displayed scale — including the
+continuous, already-live-computed recalculation of "Fit" mode while the
+window is being resized. Most visible in full-screen mode: the system's
+own enter/exit full-screen animation already resizes the window smoothly,
+frame by frame, and a separate, independently-synced 0.15s animation
+layered on top of that looked "jittery"/off. The modifier was removed
+from `ImageCanvasView` entirely; the animation moved to the specific
+places in `ImageViewerViewModel` that actually decide on a scale change —
+`zoomIn()`, `zoomOut()`, `toggleActualSize()` — wrapped in
+`withAnimation(.easeOut(duration: 0.15))`. Scale changes that are already
+synced to something else that's itself smooth/instant are left without
+animation — `zoomToFit()` and "Fit" mode in general (both while manually
+dragging the window and while the image changes —
+`fitWindowFullHeight` deliberately leaves this mode on, see above) —
+`ImageCanvasView` recomputes that scale itself, every frame, from the
+window's current size, so adding animation here would just desync the
+image from the window again — as well as `setZoom(_:)` (pinch — already
+tracked live during the gesture).
+
+Panning is clamped (`clampedPan`) so the image can never be dragged
+entirely out of the window — an axis with no overflow (e.g. when the
+image is smaller than the window in that dimension) is simply locked at
+zero.
+
+### Sorting — its own, not a mirror of Finder's
+
+The exact "Sort by" order for a given folder in Finder isn't exposed
+through any public API — the only way to read it would be parsing the
+undocumented, binary `.DS_Store` format, which is unreliable and differs
+between macOS versions (see the discussion before this was implemented).
+Instead, Pico has its own, fully predictable sorting (`ImageSortOption`:
+field + direction), set from the "Sort" menu in the grid view — by name,
+ascending, by default. Ties (e.g. the same file size) are always broken
+by name, so the order is always deterministic.
+
+### Previous/Next after "Open" — background folder scan, no sandbox
+
+Pico is **not sandboxed** — `Pico.entitlements` is deliberately empty.
+The app isn't going to the Mac App Store, so App Sandbox isn't required,
+and dropping it removes the source of an earlier limitation: under full
+sandboxing, picking a **single file** via `NSOpenPanel` only grants access
+to that one file, not to its siblings in the folder, so Previous/Next had
+no way to work after a plain "Open". Without the sandbox, that problem
+goes away.
+
+Instead, `ImageViewerViewModel.openSingleFile(url:)` shows the opened
+image right away first, and immediately after, in the background
+(`scanContainingFolder(of:)`, `Task.detached` off the main actor), scans
+its parent folder using plain `FileManager.contentsOfDirectory` — no
+extra window or consent prompt (beyond the possible one-time system
+prompt for access to a protected location like Desktop/Documents/
+Downloads, identical to any other non-sandboxed Mac app). Once the scan
+finishes, Pico adopts that folder as the active browsing context — which
+is why Previous/Next turn on by themselves (together, see below — they no
+longer dim separately at the ends of the list), with no switch to the
+grid view and no separate "Browse" step. If the image changes again in
+the meantime (a quick second "Open", or Next/Previous, before a large
+folder finishes scanning), the result of the stale scan is simply
+discarded.
+
+If "Open" points at a file that already belongs to the folder currently
+being browsed (e.g. re-opening, via Finder's "Open With…", a file from
+the same folder, or clicking a thumbnail), Pico recognizes this from the
+`folderImages` list itself and doesn't rescan anything — Previous/Next
+are active immediately.
+
+### Previous/Next loop around instead of dimming at the ends of the list
+
+`canGoPrevious`/`canGoNext` in `ImageViewerViewModel` only check whether
+the active folder has more than one image (`folderImages.count > 1`) —
+they no longer check whether the current index happens to be the
+first/last one. So both icons are always either enabled together or
+dimmed together, never separately. The transition itself computes the
+new index modulo the image count (`(idx + 1) % folderImages.count`, and
+likewise backward), so Next on the last image jumps to the first, and
+Previous on the first jumps to the last, instead of stopping at either
+end.
+
+### Save As — options only where they make sense
+
+`SaveOptionsAccessoryView` is a custom `NSSavePanel` accessory view,
+written in plain AppKit (`NSStackView` + `NSPopUpButton`/`NSSlider` driven
+by target/action) — **not** a SwiftUI view embedded via `NSHostingView`.
+The first version did it that way, but it turned out that a SwiftUI
+`Picker` embedded in a panel's `accessoryView` is an unreliable
+combination: even with an explicit frame and `sizingOptions` set on
+`NSHostingView`, the format dropdown would sometimes be unclickable until
+something else forced a layout pass (visible as "the format list suddenly
+appears after clicking Save"). A plain `NSPopUpButton` doesn't go through
+that bridge at all and is clickable right away. Choosing a format live
+updates `panel.allowedContentTypes` and the file name's extension through
+a closure, `onChange: (() -> Void)?`, called from each control's action.
+The quality slider only shows for JPEG/HEIC (`supportsQuality`), the
+LZW/none compression choice only for TIFF (`supportsCompressionChoice`);
+PNG/BMP/GIF show nothing extra, since there's nothing to configure there
+— `NSStackView.isHidden` on the relevant row group hides/shows them
+without changing the panel's width. The default file name is always
+`<original>_pico.<extension>` (the same pattern as `_movi` in Movi; if
+`<original>` already ends in `_pico` — because the file being saved was
+already a Pico export — that suffix is stripped first, so it doesn't end
+up as `_pico_pico`) — it never silently overwrites the original.
+
+The save formats are deliberately narrower than the read formats: ImageIO
+can **read** WebP and ICO, but has no encoder for them, so those two
+formats are view-only — they'll never show up as a "Save As…" target.
+
+### App icon
+
+Supplied by the author (the file `icon-source/pico-icon-1024.png`) — a
+glossy, white sphere with a rainbow, watercolor "eye" in the middle, set
+on a white, rounded card with a soft shadow underneath, cropped edge to
+edge (the card fills the entire square, with no margin around it). Used
+**as a whole, as a full 1024×1024 square** (without cutting out the
+sphere itself or adding its own transparency) — macOS applies its own
+"squircle" mask at display time, per Apple's guidelines, so the card's
+white background stays invisible anyway in most of the places the icon
+appears. Scaled (Lanczos) down to all 10 sizes `AppIcon.appiconset`
+requires.
+
+### Toolbar — one shared spacing grid
+
+All of `FloatingControlBar`'s icons (Open, Browse, Previous, Zoom Out,
+Fit to window, Zoom In, Next, Full screen, Save As) sit in a single
+`HStack` with one, uniform gap between every pair — no mixing a
+fixed-width edge slot with flexible `Spacer`s, which previously produced
+uneven gaps (a large gap before the group, tight gaps inside it). The
+bar's own width (`barWidth`) is computed directly from the icon count,
+their size, and the spacing, so it can no longer drift out of sync with
+the actual content. The "Fit to window" icon's symbol changed to
+`viewfinder`, to free up the
+`arrow.up.left.and.arrow.down.right`/`arrow.down.right.and.arrow.up.left`
+pair for the new full-screen button.
+
+## Known limitations
+
+- Animated GIFs only show their first frame — no animation playback.
+- The grid's thumbnail preview doesn't auto-refresh if the folder's
+  contents change on disk while the window is already open (click
+  "Browse"/"Change folder…" again).
+- Save formats are limited to those ImageIO has an encoder for
+  (JPEG/PNG/TIFF/HEIC/BMP/GIF) — WebP and ICO are read-only.
+- Finder's "Open With…" sometimes needs a LaunchServices refresh after the
+  app is first built (e.g. relaunching Finder, or logging out/in) — see
+  the comment next to `CFBundleDocumentTypes` in `Info.plist`.
+
+## License
+
+Code is free to use and modify in any way — no additional restrictions.
