@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+	Deliberately empty (no App Sandbox entitlement): Pico isn't distributed
+	through the Mac App Store, so sandboxing isn't required, and dropping it
+	removes the single-file-only access restriction that made Previous/Next
+	impossible after a plain "Otwórz" — see `ImageViewerViewModel.
+	scanContainingFolder(of:)`. The file still exists (rather than removing
+	`CODE_SIGN_ENTITLEMENTS` from `project.yml`) so Hardened Runtime and any
+	future entitlement can still be added here without touching the project
+	file again.
+-->
+<dict/>
+</plist>
