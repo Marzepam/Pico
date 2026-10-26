@@ -1,3 +1,5 @@
+<img width="998" height="598" alt="Screenshot 2026-10-26 at 13 14 42" src="https://github.com/user-attachments/assets/c74c4ca4-07cc-4a1b-b33f-0687a4c73c1a" />
+<img width="667" height="599" alt="Screenshot 2026-10-26 at 13 13 31" src="https://github.com/user-attachments/assets/e22cef7f-4a0a-4fbb-a9fa-54c8e6947e1c" />
 # Pico
 
 A minimalist, native macOS image viewer. Written in
